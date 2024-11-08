@@ -1,20 +1,23 @@
 package store.domain.product;
 
-import java.util.List;
+import java.util.*;
 
 public class Products {
-    private List<Product> products;
+    private final List<Product> products;
 
     public Products(List<Product> products) {
         this.products = products;
     }
 
     public List<Product> getProducts() {
+        List<Product> clonedProducts = new ArrayList<Product>();
 
         for (Product product : products) {
-            System.out.println(product);
+            Map<String, Object> clonedProductData = new HashMap<>(product.getProductData());
+            clonedProducts.add(new Product(clonedProductData));
         }
-        return products;
+        
+        return Collections.unmodifiableList(clonedProducts);
     }
 
 }

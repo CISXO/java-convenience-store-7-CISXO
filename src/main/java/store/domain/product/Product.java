@@ -9,29 +9,8 @@ public class Product {
         this.productData = productData;
     }
 
-    public String getName() {
-        return (String) productData.get("name");
+    public Map<String, Object> getProductData() {
+        return productData;
     }
 
-    public int getPrice() {
-        return (Integer) productData.get("price");
-    }
-
-    public int getQuantity() {
-        return (Integer) productData.get("quantity");
-    }
-
-    public String getPromotion() {
-        return (String) productData.get("promotion");
-    }
-
-    @Override
-    public String toString() {
-        return "Product{" +
-                "name='" + getName() + '\'' +
-                ", price=" + getPrice() +
-                ", quantity=" + getQuantity() +
-                ", promotion='" + getPromotion() + '\'' +
-                '}';
-    }
 }

@@ -1,8 +1,6 @@
 package store.domain.promotion;
 
-import store.domain.product.Product;
-
-import java.util.List;
+import java.util.*;
 
 public class Promotions {
     private List<Promotion> promotions;
@@ -12,10 +10,12 @@ public class Promotions {
     }
 
     public List<Promotion> getPromotions() {
+        List<Promotion> clonedProducts = new ArrayList<Promotion>();
 
         for (Promotion promotion : promotions) {
-            System.out.println(promotion);
+            Map<String, Object> clonedPromotionData = new HashMap<>(promotion.getPromotionData());
+            clonedProducts.add(new Promotion(clonedPromotionData));
         }
-        return promotions;
+        return Collections.unmodifiableList(clonedProducts);
     }
 }
