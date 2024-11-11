@@ -1,21 +1,26 @@
 package store.domain.promotion;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 public class Promotions {
-    private List<Promotion> promotions;
+    private final List<Promotion> promotions;
 
     public Promotions(List<Promotion> promotions) {
-        this.promotions = promotions;
+        this.promotions = new ArrayList<>();
+        for (Promotion promotion : promotions) {
+            this.promotions.add(new Promotion(
+                    promotion.getName(),
+                    promotion.getBuyQuantity(),
+                    promotion.getFreeQuantity(),
+                    promotion.getStartDate(),
+                    promotion.getEndDate()
+            ));
+        }
     }
 
     public List<Promotion> getPromotions() {
-        List<Promotion> clonedProducts = new ArrayList<Promotion>();
-
-        for (Promotion promotion : promotions) {
-            Map<String, Object> clonedPromotionData = new HashMap<>(promotion.getPromotionData());
-            clonedProducts.add(new Promotion(clonedPromotionData));
-        }
-        return Collections.unmodifiableList(clonedProducts);
+        return Collections.unmodifiableList(promotions);
     }
 }
