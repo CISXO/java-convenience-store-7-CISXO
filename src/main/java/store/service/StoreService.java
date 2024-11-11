@@ -2,29 +2,42 @@ package store.service;
 
 import store.domain.product.Product;
 import store.domain.product.Products;
+import store.domain.promotion.Promotion;
 import store.domain.promotion.Promotions;
-import store.repository.StoreRepository;
 
 import java.util.List;
-
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class StoreService {
-    private final StoreRepository storeRepository;
-
-    public StoreService() {
-        this.storeRepository = new StoreRepository();
-    }
-
-    public List<Product> getProducts() {
-        return storeRepository.getProducts();
-    }
+    private Products products;
+    private Promotions promotions;
 
     public void saveProducts(Products products) {
-        storeRepository.saveProducts(products);
+        this.products = products;
     }
 
     public void savePromotions(Promotions promotions) {
-        storeRepository.savePromotions(promotions);
+        this.promotions = promotions;
     }
 
+    public List<Product> getProducts() {
+        return products.getProducts();
+    }
+
+    public List<Product> findProductsByName(String productName) {
+        return products.getProducts().stream()
+                .filter(product -> product.getName().equals(productName))
+                .collect(Collectors.toList());
+    }
+
+    public Optional<Promotion> findPromotionByProductName(String productName) {
+        return promotions.getPromotions().stream()
+                .filter(promotion -> promotion.getName().equals(productName))
+                .findFirst();
+    }
+
+    public void updateProductQuantity(Product product, int quantity) {
+        product.reduceQuantity(quantity);
+    }
 }
