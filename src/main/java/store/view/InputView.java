@@ -2,6 +2,7 @@ package store.view;
 
 import camp.nextstep.edu.missionutils.Console;
 import store.global.constants.Constants;
+import store.global.exception.ExceptionMessage;
 import store.global.utils.Validator;
 
 import java.util.HashMap;
@@ -24,7 +25,7 @@ public class InputView {
         try {
             return parsePurchaseInput(input);
         } catch (Exception e) {
-            System.out.println("[ERROR] 잘못된 입력 형식입니다. 다시 입력해 주세요.");
+            System.out.println(e.getMessage());
             return readPurchaseItem();
         }
     }
@@ -51,13 +52,33 @@ public class InputView {
 
     public boolean readContinueShopping() {
         System.out.println("감사합니다. 구매하고 싶은 다른 상품이 있나요? (Y/N)");
+        return readShoppingRedirect();
+    }
+
+    private boolean readShoppingRedirect() {
         String input = readInput().trim().toUpperCase();
 
-        while (!input.equals("Y") && !input.equals("N")) {
-            System.out.println("[ERROR] 올바르지 않은 입력입니다. Y 또는 N을 입력해 주세요.");
+        while (!input.equals(Constants.YES) && !input.equals(Constants.NO)) {
+            System.out.println(ExceptionMessage.INPUT_WRONG_FORM.getMessage());
+            System.out.println("Y 또는 N을 입력해 주세요.");
             input = readInput().trim().toUpperCase();
         }
-
-        return input.equals("Y");
+        return input.equals(Constants.YES);
     }
+
+    public boolean readMembershipDiscountConfirmation() {
+        return readShoppingRedirect();
+    }
+
+    public boolean readYesNoConfirmation() {
+        while (true) {
+            String input = readInput().trim().toUpperCase();
+            if (input.equals(Constants.YES)) return true;
+            if (input.equals(Constants.NO)) return false;
+
+            System.out.println("[ERROR] Y 또는 N만 입력 가능합니다. 다시 입력해 주세요.");
+        }
+    }
+
+
 }
