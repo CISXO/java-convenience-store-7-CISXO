@@ -1,13 +1,13 @@
 package store.service;
 
+import store.domain.order.OrderItem;
 import store.domain.product.Product;
 import store.domain.product.Products;
 import store.domain.promotion.Promotion;
 import store.domain.promotion.Promotions;
+import store.global.exception.ExceptionMessage;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 public class StoreService {
     private Products products;
@@ -25,19 +25,39 @@ public class StoreService {
         return products.getProducts();
     }
 
-    public List<Product> findProductsByName(String productName) {
+    public List<Promotion> getPromotions() {
+        return promotions.getPromotions();
+    }
+
+    public Product getProducts(String productName) {
         return products.getProducts().stream()
                 .filter(product -> product.getName().equals(productName))
-                .collect(Collectors.toList());
+                .findFirst()
+                .orElseThrow(() ->
+                        new IllegalArgumentException(ExceptionMessage.PRODUCT_IS_NO_EXIST.getMessage() + productName)
+                );
     }
 
-    public Optional<Promotion> findPromotionByProductName(String productName) {
+    public Promotion findPromotionByProductName(String productName) {
+        Product findProduct = products.findProductByName(productName);
+        String promotionName = findProduct.getPromotion();
+
+        if (promotionName == null) {
+            return null;
+        }
         return promotions.getPromotions().stream()
-                .filter(promotion -> promotion.getName().equals(productName))
-                .findFirst();
+                .filter(promotion -> promotion.getName().equalsIgnoreCase(promotionName))
+                .findFirst()
+                .orElse(null);
     }
 
-    public void updateProductQuantity(Product product, int quantity) {
-        product.reduceQuantity(quantity);
+    public void updateProductInventory(List<OrderItem> orderItems) {
+        for (OrderItem item : orderItems) {
+            Product product = products.findProductByName(item.getProductName());
+            product.reduceGeneralQuantity(item.getGeneralQuantity());
+            product.reducePromotionQuantity(item.getPromotionQuantity());
+            products.updateProduct(product);
+        }
     }
+
 }
