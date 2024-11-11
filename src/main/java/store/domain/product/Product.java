@@ -1,5 +1,7 @@
 package store.domain.product;
 
+import store.global.exception.ExceptionMessage;
+
 public class Product {
     private final String name;
     private final int price;
@@ -35,18 +37,26 @@ public class Product {
         return promotion;
     }
 
-    public void reduceQuantity(int amount) {
-        if (amount > quantity) {
-            throw new IllegalArgumentException("Insufficient stock for product: " + name);
+    public void reduceGeneralQuantity(int amount) {
+        if (quantity >= amount) {
+            this.quantity -= amount;
+        } else {
+            throw new IllegalArgumentException(ExceptionMessage.INPUT_PURCHASE_ITEM_EMPTY_NAME + name);
         }
-        this.quantity -= amount;
     }
 
     public void reducePromotionQuantity(int amount) {
-        if (amount > promotionQuantity) {
-            throw new IllegalArgumentException("Insufficient promotion stock for product: " + name);
+        if (promotionQuantity >= amount) {
+            this.promotionQuantity -= amount;
+        } else {
+            throw new IllegalArgumentException(ExceptionMessage.INPUT_PURCHASE_ITEM_EMPTY_NAME + name);
         }
-        this.promotionQuantity -= amount;
+    }
+
+    public void validateQuantity(int requiredQuantity) {
+        if (quantity + promotionQuantity < requiredQuantity) {
+            throw new IllegalStateException(ExceptionMessage.PRPDUCT_NO_QUANTITY.getMessage());
+        }
     }
 
     public void addQuantity(int quantity, boolean isPromotion) {

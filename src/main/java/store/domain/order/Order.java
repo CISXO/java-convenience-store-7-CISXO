@@ -13,30 +13,33 @@ public class Order {
     private final List<OrderItem> items = new ArrayList<>();
     private int originalTotalCost;
     private int totalDiscount;
+    private int promotionDiscount;
+    private int membershipDiscount;
 
-    public void addItem(List<Product> products, int quantity, Promotion promotion) {
+    public void addItem(Product product, int quantity, Promotion promotion) {
         int remainingQuantity = quantity;
         int discount = 0;
-
-        for (Product product : products) {
-            if (remainingQuantity <= 0) break;
-            remainingQuantity = addProductToOrder(product, remainingQuantity, promotion);
-            discount += calculateDiscount(remainingQuantity, promotion, product);
-        }
+        product.validateQuantity(remainingQuantity);
+        int usedQuantity = addProductToOrder(product, remainingQuantity, promotion);
+        discount += calculateDiscount(usedQuantity, promotion, product);
+        remainingQuantity -= usedQuantity;
         validateRemainingQuantity(remainingQuantity);
         totalDiscount += discount;
     }
 
+    public void addPromotionDiscount(int discount) {
+        this.promotionDiscount += discount;
+        this.totalDiscount += discount;
+    }
+
     private int addProductToOrder(Product product, int remainingQuantity, Promotion promotion) {
         int promotionQuantityToUse = usePromotionQuantity(product, remainingQuantity);
-        remainingQuantity -= promotionQuantityToUse;
+        int generalQuantityToUse = useGeneralQuantity(product, remainingQuantity - promotionQuantityToUse);
 
-        int generalQuantityToUse = useGeneralQuantity(product, remainingQuantity);
-        remainingQuantity -= generalQuantityToUse;
-
-        int effectiveQuantity = calculateEffectiveQuantity(promotionQuantityToUse, generalQuantityToUse, promotion, product);
+        int effectiveQuantity = calculateEffectiveQuantity(promotionQuantityToUse, generalQuantityToUse, promotion);
         addOrderItem(product, promotionQuantityToUse, generalQuantityToUse, effectiveQuantity);
-        return remainingQuantity;
+
+        return promotionQuantityToUse + generalQuantityToUse;
     }
 
     private int usePromotionQuantity(Product product, int remainingQuantity) {
@@ -47,11 +50,11 @@ public class Order {
 
     private int useGeneralQuantity(Product product, int remainingQuantity) {
         int generalQuantityToUse = Math.min(remainingQuantity, product.getQuantity());
-        product.reduceQuantity(generalQuantityToUse);
+        product.reduceGeneralQuantity(generalQuantityToUse);
         return generalQuantityToUse;
     }
 
-    private int calculateEffectiveQuantity(int promotionQuantityToUse, int generalQuantityToUse, Promotion promotion, Product product) {
+    private int calculateEffectiveQuantity(int promotionQuantityToUse, int generalQuantityToUse, Promotion promotion) {
         int effectiveQuantity = promotionQuantityToUse + generalQuantityToUse;
         if (promotion != null && promotion.isPromotionActive()) {
             int promoItems = (promotionQuantityToUse / promotion.getBuyQuantity()) * promotion.getFreeQuantity();
@@ -60,11 +63,11 @@ public class Order {
         return effectiveQuantity;
     }
 
-    private int calculateDiscount(int promotionQuantityToUse, Promotion promotion, Product product) {
+    private int calculateDiscount(int usedQuantity, Promotion promotion, Product product) {
         if (promotion == null || !promotion.isPromotionActive()) {
             return 0;
         }
-        int promoItems = (promotionQuantityToUse / promotion.getBuyQuantity()) * promotion.getFreeQuantity();
+        int promoItems = (usedQuantity / promotion.getBuyQuantity()) * promotion.getFreeQuantity();
         return product.getPrice() * promoItems;
     }
 
@@ -74,7 +77,11 @@ public class Order {
     }
 
     public int getFinalCost() {
-        return originalTotalCost - totalDiscount;
+        return originalTotalCost - promotionDiscount - membershipDiscount;
+    }
+
+    public int getTotalRegularCost() {
+        return originalTotalCost;
     }
 
     public int getTotalDiscount() {
@@ -86,9 +93,22 @@ public class Order {
     }
 
     public int applyMembershipDiscount(int membershipDiscountRate, int maxDiscount) {
-        int membershipDiscount = (int) (getFinalCost() * (membershipDiscountRate / 100.0));
+        int totalEligibleForMembershipDiscount = items.stream()
+                .filter(item -> !item.hasPromotion())
+                .mapToInt(OrderItem::getTotalCost)
+                .sum();
+
+        membershipDiscount = (int) (totalEligibleForMembershipDiscount * (membershipDiscountRate / 100.0));
         membershipDiscount = Math.min(membershipDiscount, maxDiscount);
         totalDiscount += membershipDiscount;
+        return membershipDiscount;
+    }
+
+    public int getTotalPromotionDiscount() {
+        return promotionDiscount;
+    }
+
+    public int getMembershipDiscount() {
         return membershipDiscount;
     }
 }

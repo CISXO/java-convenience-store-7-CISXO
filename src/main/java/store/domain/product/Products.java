@@ -1,8 +1,6 @@
 package store.domain.product;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class Products {
     private final List<Product> products;
@@ -24,4 +22,22 @@ public class Products {
         }
         return Collections.unmodifiableList(clonedProducts);
     }
+
+    public Product findProductByName(String name) {
+        return products.stream()
+                .filter(product -> product.getName().equals(name))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("[ERROR] 존재하지 않는 상품입니다."));
+    }
+
+
+    public void updateProduct(Product updatedProduct) {
+        for (int i = 0; i < products.size(); i++) {
+            if (products.get(i).getName().equals(updatedProduct.getName())) {
+                products.set(i, updatedProduct);
+                break;
+            }
+        }
+    }
 }
+

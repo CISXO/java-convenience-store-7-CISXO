@@ -23,19 +23,19 @@ public class OrderItem {
         return promotionQuantity + generalQuantity;
     }
 
-    public int getEffectiveQuantity() {
-        return effectiveQuantity;
-    }
-
-    public int getCost() {
-        return product.getPrice() * getQuantity();
-    }
-
     public int getTotalCost() {
-        return product.getPrice() * effectiveQuantity;
+        return product.getPrice() * (promotionQuantity + generalQuantity);
     }
 
-    public boolean isPromotionApplied() {
+    public int getGeneralQuantity() {
+        return generalQuantity;
+    }
+
+    public int getPromotionQuantity() {
+        return promotionQuantity;
+    }
+
+    public boolean hasPromotion() {
         return promotionQuantity > 0;
     }
 }
