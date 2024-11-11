@@ -9,4 +9,7 @@ public class Constants {
     public static final String PRODUCTS_PREFIX = "[";
     public static final String PRODUCTS_SUFFIX = "]";
 
+    public static final String YES = "Y";
+    public static final String NO = "N";
+
 }
