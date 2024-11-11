@@ -18,9 +18,7 @@ public class FileDataMapping {
         List<String> productFileList = readFile(filePath);
         initializeHeaders(productFileList.get(0));
 
-        Map<String, Product> productMap = new HashMap<>();
-        productFileList.stream().skip(1).forEach(line -> addProductToMap(line, productMap));
-
+        Map<String, Product> productMap = createProductMap(productFileList);
         return new ArrayList<>(productMap.values());
     }
 
@@ -34,34 +32,44 @@ public class FileDataMapping {
                 .collect(Collectors.toList());
     }
 
-//    public void updateProductsFile(List<Product> products, String filePath) throws IOException {
-//        List<String> lines = new ArrayList<>();
-//        lines.add("name,price,quantity,promotion");
-//
-//        products.forEach(product -> addProductLine(lines, product));
-//        Files.write(Paths.get(filePath), lines, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-//    }
+    private Map<String, Product> createProductMap(List<String> productFileList) {
+        Map<String, Product> productMap = new HashMap<>();
+        productFileList.stream().skip(1).forEach(line -> processProductLine(line, productMap));
+        return productMap;
+    }
 
-    private void addProductToMap(String line, Map<String, Product> productMap) {
+    private void processProductLine(String line, Map<String, Product> productMap) {
         String[] dataValues = line.split(Constants.DELIMITER);
+        String key = generateProductKey(dataValues);
+
+        if (productMap.containsKey(key)) {
+            updateExistingProduct(dataValues, productMap.get(key));
+            return;
+        }
+        addNewProduct(dataValues, productMap, key);
+    }
+
+
+    private String generateProductKey(String[] dataValues) {
+        return dataValues[0] + dataValues[1];
+    }
+
+    private void updateExistingProduct(String[] dataValues, Product existingProduct) {
+        int quantity = Integer.parseInt(dataValues[2]);
+        boolean isPromotion = !"null".equals(dataValues[3]);
+        existingProduct.addQuantity(quantity, isPromotion);
+    }
+
+    private void addNewProduct(String[] dataValues, Map<String, Product> productMap, String key) {
         String name = dataValues[0];
         int price = Integer.parseInt(dataValues[1]);
         int quantity = Integer.parseInt(dataValues[2]);
         String promotion = "null".equals(dataValues[3]) ? null : dataValues[3];
-        String key = name + price;
 
-        if (productMap.containsKey(key)) {
-            Product existingProduct = productMap.get(key);
-            if (promotion == null) {
-                existingProduct.addQuantity(quantity, false);
-            } else {
-                existingProduct.addQuantity(quantity, true);
-            }
-        } else {
-            int regularQuantity = promotion == null ? quantity : 0;
-            int promotionQuantity = promotion != null ? quantity : 0;
-            productMap.put(key, new Product(name, price, regularQuantity, promotionQuantity, promotion));
-        }
+        int regularQuantity = promotion == null ? quantity : 0;
+        int promotionQuantity = promotion != null ? quantity : 0;
+
+        productMap.put(key, new Product(name, price, regularQuantity, promotionQuantity, promotion));
     }
 
     private Promotion mapToPromotion(String line) {
@@ -71,32 +79,15 @@ public class FileDataMapping {
         int get = Integer.parseInt(dataValues[2]);
         LocalDate startDate = LocalDate.parse(dataValues[3]);
         LocalDate endDate = LocalDate.parse(dataValues[4]);
+
         return new Promotion(name, buy, get, startDate, endDate);
     }
 
     private void initializeHeaders(String headerLine) {
-        headers = Arrays.asList(headerLine.split(","));
+        headers = Arrays.asList(headerLine.split(Constants.DELIMITER));
     }
 
     private List<String> readFile(String filePath) throws IOException {
         return Files.readAllLines(Paths.get(filePath));
-    }
-
-    private void addProductLine(List<String> lines, Product product) {
-        if (product.getQuantity() > 0) {
-            lines.add(String.format("%s,%d,%d,null",
-                    product.getName(),
-                    product.getPrice(),
-                    product.getQuantity()
-            ));
-        }
-        if (product.getPromotionQuantity() > 0) {
-            lines.add(String.format("%s,%d,%d,%s",
-                    product.getName(),
-                    product.getPrice(),
-                    product.getPromotionQuantity(),
-                    product.getPromotion() == null ? "" : product.getPromotion()
-            ));
-        }
     }
 }
