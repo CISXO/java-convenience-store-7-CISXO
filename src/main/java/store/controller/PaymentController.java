@@ -1,62 +1,132 @@
 package store.controller;
 
-import camp.nextstep.edu.missionutils.Console;
 import store.domain.order.Order;
 import store.domain.product.Product;
+import store.domain.promotion.Promotion;
+import store.global.exception.ExceptionMessage;
 import store.service.StoreService;
+import store.view.InputView;
 import store.view.OutputView;
-import store.global.utils.FileDataMapping;
-import store.global.constants.Constants;
 
-import java.io.IOException;
-import java.util.List;
 import java.util.Map;
 
 public class PaymentController {
+    private final InputView inputView;
     private final OutputView outputView;
-    private final FileDataMapping fileDataMapping;
 
-    public PaymentController(OutputView outputView) {
-        this.outputView = outputView;
-        this.fileDataMapping = new FileDataMapping();
+    public PaymentController() {
+        this.inputView = new InputView();
+        this.outputView = new OutputView();
     }
 
     public void processPayment(Map<String, Integer> purchaseItems, StoreService storeService) {
         Order order = new Order();
+        purchaseItems.forEach((productName, quantity) -> processPurchaseItem(storeService, order, productName, quantity));
+        applyMembershipDiscountIfApplicable(order);
+        finalizeOrder(storeService, order);
+    }
 
-        for (Map.Entry<String, Integer> entry : purchaseItems.entrySet()) {
-            String productName = entry.getKey();
-            int quantity = entry.getValue();
+    private void processPurchaseItem(StoreService storeService, Order order, String productName, int quantity) {
+        Product product = storeService.getProducts(productName);
+        Promotion promotion = storeService.findPromotionByProductName(productName);
 
-            try {
-                List<Product> products = storeService.findProductsByName(productName);
-                var promotion = storeService.findPromotionByProductName(productName);
+        if (isQuantityExceedingStock(product, quantity)) return;
 
-                order.addItem(products, quantity, promotion.orElse(null));
-
-            } catch (IllegalArgumentException e) {
-                outputView.printError(e.getMessage());
-                return;
-            }
+        if (promotion == null || !promotion.isPromotionActive()) {
+            order.addItem(product, quantity, null);
+            return;
         }
+        processPromotion(order, product, promotion, quantity);
+    }
 
-        // 멤버십 할인 적용 여부 확인
+    private boolean isQuantityExceedingStock(Product product, int quantity) {
+        int totalAvailableStock = product.getQuantity() + product.getPromotionQuantity();
+        if (quantity > totalAvailableStock) {
+            outputView.printError(ExceptionMessage.PRPDUCT_NO_QUANTITY.getMessage());
+            return true;
+        }
+        return false;
+    }
+
+    private void processPromotion(Order order, Product product, Promotion promotion, int quantity) {
+        int availablePromoQuantity = product.getPromotionQuantity();
+        if (quantity <= availablePromoQuantity) {
+            applyFullPromotion(order, product, promotion, quantity);
+            return;
+        }
+        applyPartialPromotion(order, product, promotion, quantity, availablePromoQuantity);
+    }
+
+    private void applyFullPromotion(Order order, Product product, Promotion promotion, int quantity) {
+        int effectiveQuantity = calculateEffectiveQuantity(quantity, promotion);
+        int promoDiscount = calculatePromotionDiscount(product, effectiveQuantity, quantity);
+
+        if (getAddExtraItemsConfirmation(product.getName(), effectiveQuantity - quantity)) {
+            addPromotionItemsToOrder(order, product, effectiveQuantity, promotion, promoDiscount);
+            return;
+        }
+        order.addItem(product, quantity, promotion);
+    }
+
+    private void applyPartialPromotion(Order order, Product product, Promotion promotion, int quantity, int promoStock) {
+        int promoSetSize = promotion.getBuyQuantity() + promotion.getFreeQuantity();
+        int fullPromoSets = promoStock / promoSetSize;
+        int remainder = promoStock % promoSetSize;
+
+        int totalItemsWithoutDiscount = calculateItemsWithoutDiscount(quantity, promoStock, remainder);
+        showPartialPromoNotice(product.getName(), promoStock, quantity, totalItemsWithoutDiscount);
+
+        if (inputView.readYesNoConfirmation()) {
+            int promoDiscount = fullPromoSets * product.getPrice() * promotion.getFreeQuantity();
+            addPromotionItemsToOrder(order, product, quantity, promotion, promoDiscount);
+            return;
+        }
+        order.addItem(product, promoStock, promotion);
+    }
+
+    private int calculateItemsWithoutDiscount(int quantity, int promoStock, int remainder) {
+        return quantity - promoStock + remainder;
+    }
+
+    private void showPartialPromoNotice(String productName, int promoStock, int quantity, int itemsWithoutDiscount) {
+        outputView.showPartialPromoNotice(productName, promoStock, quantity, itemsWithoutDiscount);
+    }
+
+    private void addPromotionItemsToOrder(Order order, Product product, int quantity, Promotion promotion, int promoDiscount) {
+        order.addItem(product, quantity, promotion);
+        order.addPromotionDiscount(promoDiscount);
+    }
+
+    private boolean getAddExtraItemsConfirmation(String productName, int extraItems) {
+        outputView.showPromotionNotice(productName, extraItems);
+        return inputView.readYesNoConfirmation();
+    }
+
+    private int calculateEffectiveQuantity(int quantity, Promotion promotion) {
+        return quantity + (quantity / promotion.getBuyQuantity()) * promotion.getFreeQuantity();
+    }
+
+    private int calculatePromotionDiscount(Product product, int effectiveQuantity, int quantity) {
+        return (effectiveQuantity - quantity) * product.getPrice();
+    }
+
+    private void applyMembershipDiscountIfApplicable(Order order) {
+        if (order.getTotalPromotionDiscount() < order.getTotalRegularCost()) {
+            applyMembershipDiscount(order);
+        }
+    }
+
+    private void applyMembershipDiscount(Order order) {
         outputView.askForMembershipDiscount();
-        String input = Console.readLine().trim().toUpperCase();
-        if ("Y".equals(input)) {
-            int discount = order.applyMembershipDiscount(30, 8000); // 30% 할인, 최대 8000원
+        if (inputView.readMembershipDiscountConfirmation()) {
+            int discount = order.applyMembershipDiscount(30, 8000);
             outputView.showMembershipDiscount(discount);
         }
+    }
 
-        // 최종 영수증 출력
-        outputView.printReceipt(order.getItems(), order.getFinalCost(), order.getTotalDiscount());
-
-        // 제품 정보 최종 결제 연결
-//        try {
-//            fileDataMapping.updateProductsFile(storeService.getProducts(), Constants.PRODUCTS_FILE_PATH);
-//        } catch (IOException e) {
-//            outputView.printError("[ERROR] 제품 파일을 업데이트하는 중 문제가 발생했습니다.");
-//        }
-
+    private void finalizeOrder(StoreService storeService, Order order) {
+        storeService.updateProductInventory(order.getItems());
+        outputView.printReceipt(order.getItems(), order.getFinalCost(), order.getTotalRegularCost(),
+                order.getMembershipDiscount(), order.getTotalPromotionDiscount());
     }
 }

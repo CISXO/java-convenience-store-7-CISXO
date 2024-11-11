@@ -23,7 +23,7 @@ public class StoreController {
         this.inputView = new InputView();
         this.outputView = new OutputView();
         this.storeService = new StoreService();
-        this.paymentController = new PaymentController(outputView);
+        this.paymentController = new PaymentController();
     }
 
     public void run() {
@@ -39,8 +39,8 @@ public class StoreController {
         boolean continueShopping = true;
 
         while (continueShopping) {
-            openStore();              // 상품 목록을 보여줍니다.
-            continueShopping = purchaseStoreItem(); // 구매 프로세스를 시작합니다.
+            openStore();
+            continueShopping = purchaseStoreItem();
         }
     }
 
@@ -50,12 +50,12 @@ public class StoreController {
     }
 
     private boolean purchaseStoreItem() {
-        Map<String, Integer> purchaseItems = inputView.readPurchaseItem();
-
-        // 결제 및 할인 로직을 PaymentController로 위임
-        paymentController.processPayment(purchaseItems, storeService);
-
-        // 추가 구매 여부를 묻는 부분을 InputView로 위임
+        try {
+            Map<String, Integer> purchaseItems = inputView.readPurchaseItem();
+            paymentController.processPayment(purchaseItems, storeService);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
         return inputView.readContinueShopping();
     }
 
