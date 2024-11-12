@@ -61,6 +61,38 @@ class ApplicationTest extends NsTest {
         });
     }
 
+    @Test
+    void 프로모션_적용된_상품_구매() {
+        assertSimpleTest(() -> {
+            run("[콜라-5]", "Y", "N","N");
+            assertThat(output().replaceAll("\\s", "")).contains("내실돈5,000");
+        });
+    }
+
+    @Test
+    void 프로모션_및_멤버십_할인_동시_적용() {
+        assertSimpleTest(() -> {
+            run("[사이다-3],[비타민워터-3]", "Y", "Y","N");
+            assertThat(output().replaceAll("\\s", "")).contains("내실돈6,150");
+        });
+    }
+
+    @Test
+    void 잘못된_상품명_입력_예외() {
+        assertSimpleTest(() -> {
+            runException("[없는상품-1]", "N", "N");
+            assertThat(output()).contains("[ERROR] 존재하지 않는 상품입니다.");
+        });
+    }
+
+    @Test
+    void 멤버십_할인만_적용된_구매() {
+        assertSimpleTest(() -> {
+            run("[정식도시락-2]", "Y", "N");
+            assertThat(output().replaceAll("\\s", "")).contains("내실돈8,960");
+        });
+    }
+
     @Override
     public void runMain() {
         Application.main(new String[]{});
