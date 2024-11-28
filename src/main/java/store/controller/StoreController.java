@@ -52,7 +52,7 @@ public class StoreController {
     private boolean purchaseStoreItem() {
         try {
             Map<String, Integer> purchaseItems = inputView.readPurchaseItem();
-            paymentController.processPayment(purchaseItems, storeService);
+            paymentController.processPayment(purchaseItems);
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
