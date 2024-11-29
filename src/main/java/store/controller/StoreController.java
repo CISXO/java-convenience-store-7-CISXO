@@ -7,40 +7,43 @@ import store.domain.promotion.Promotions;
 import store.global.constants.Constants;
 import store.global.utils.FileDataMapping;
 import store.service.StoreService;
-import store.view.InputView;
 import store.view.OutputView;
 
-import java.io.IOException;
 import java.util.*;
 
 public class StoreController {
-    private final InputView inputView;
     private final OutputView outputView;
     private final StoreService storeService;
     private final PaymentController paymentController;
 
     public StoreController() {
-        this.inputView = new InputView();
         this.outputView = new OutputView();
         this.storeService = new StoreService();
-        this.paymentController = new PaymentController();
+        this.paymentController = new PaymentController(storeService);
     }
 
     public void run() {
-        try {
-            initializeLoadAllFiles();
-            startShopping();
-        } catch (IOException e) {
-            outputView.printExceptionMessage();
-        }
+        process(this::initializeProducts);
+        process(this::initializePromotions);
+        process(this::startShopping);
     }
 
-    private void startShopping() throws IOException {
+    private void initializeProducts() {
+        List<Product> products = loadProducts();
+        storeService.saveProducts(new Products(products));
+    }
+
+    private void initializePromotions() {
+        List<Promotion> promotions = loadPromotions();
+        storeService.savePromotions(new Promotions(promotions));
+    }
+
+    private void startShopping() {
         boolean continueShopping = true;
 
         while (continueShopping) {
             openStore();
-            continueShopping = purchaseStoreItem();
+            continueShopping = paymentController.purchaseStoreItem();
         }
     }
 
@@ -49,36 +52,20 @@ public class StoreController {
         outputView.openStore(products);
     }
 
-    private boolean purchaseStoreItem() {
-        try {
-            Map<String, Integer> purchaseItems = inputView.readPurchaseItem();
-            paymentController.processPayment(purchaseItems);
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-        }
-        return inputView.readContinueShopping();
-    }
-
-    private void initializeLoadAllFiles() throws IOException {
-        initializeProducts();
-        initializePromotions();
-    }
-
-    private void initializeProducts() throws IOException {
-        List<Product> products = loadProducts();
-        storeService.saveProducts(new Products(products));
-    }
-
-    private void initializePromotions() throws IOException {
-        List<Promotion> promotions = loadPromotions();
-        storeService.savePromotions(new Promotions(promotions));
-    }
-
-    private List<Product> loadProducts() throws IOException {
+    private List<Product> loadProducts(){
         return new FileDataMapping().loadProducts(Constants.PRODUCTS_FILE_PATH);
     }
 
-    private List<Promotion> loadPromotions() throws IOException {
+    private List<Promotion> loadPromotions() {
         return new FileDataMapping().loadPromotions(Constants.PROMOTIONS_FILE_PATH);
     }
+
+    private void process(Runnable action) {
+        try {
+            action.run();
+        } catch (IllegalArgumentException e) {
+            outputView.printExceptionMessage();
+        }
+    }
+
 }
