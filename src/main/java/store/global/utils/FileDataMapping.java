@@ -12,19 +12,15 @@ import java.util.stream.Collectors;
 
 public class FileDataMapping {
 
-    private List<String> headers;
-
-    public List<Product> loadProducts(String filePath) throws IOException {
+    public List<Product> loadProducts(String filePath) {
         List<String> productFileList = readFile(filePath);
-        initializeHeaders(productFileList.get(0));
 
         Map<String, Product> productMap = createProductMap(productFileList);
         return new ArrayList<>(productMap.values());
     }
 
-    public List<Promotion> loadPromotions(String filePath) throws IOException {
+    public List<Promotion> loadPromotions(String filePath) {
         List<String> promotionFileList = readFile(filePath);
-        initializeHeaders(promotionFileList.get(0));
 
         return promotionFileList.stream()
                 .skip(1)
@@ -83,11 +79,12 @@ public class FileDataMapping {
         return new Promotion(name, buy, get, startDate, endDate);
     }
 
-    private void initializeHeaders(String headerLine) {
-        headers = Arrays.asList(headerLine.split(Constants.DELIMITER));
-    }
 
-    private List<String> readFile(String filePath) throws IOException {
-        return Files.readAllLines(Paths.get(filePath));
+    private List<String> readFile(String filePath) {
+        try {
+            return Files.readAllLines(Paths.get(filePath));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
