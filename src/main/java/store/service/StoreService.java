@@ -5,59 +5,43 @@ import store.domain.product.Product;
 import store.domain.product.Products;
 import store.domain.promotion.Promotion;
 import store.domain.promotion.Promotions;
-import store.global.exception.ExceptionMessage;
+import store.repository.StoreRepository;
 
 import java.util.List;
 
 public class StoreService {
-    private Products products;
-    private Promotions promotions;
+    private final StoreRepository storeRepository;
+
+    public StoreService() {
+        this.storeRepository = new StoreRepository();
+    }
 
     public void saveProducts(Products products) {
-        this.products = products;
+        storeRepository.saveProducts(products);
     }
 
     public void savePromotions(Promotions promotions) {
-        this.promotions = promotions;
+        storeRepository.savePromotions(promotions);
     }
 
     public List<Product> getProducts() {
-        return products.getProducts();
-    }
-
-    public List<Promotion> getPromotions() {
-        return promotions.getPromotions();
+        return storeRepository.getProducts();
     }
 
     public Product getProducts(String productName) {
-        return products.getProducts().stream()
-                .filter(product -> product.getName().equals(productName))
-                .findFirst()
-                .orElseThrow(() ->
-                        new IllegalArgumentException(ExceptionMessage.PRODUCT_IS_NO_EXIST.getMessage() + productName)
-                );
+        return storeRepository.getProducts(productName);
+    }
+
+    public List<Promotion> getPromotions() {
+        return storeRepository.getPromotions();
     }
 
     public Promotion findPromotionByProductName(String productName) {
-        Product findProduct = products.findProductByName(productName);
-        String promotionName = findProduct.getPromotion();
-
-        if (promotionName == null) {
-            return null;
-        }
-        return promotions.getPromotions().stream()
-                .filter(promotion -> promotion.getName().equalsIgnoreCase(promotionName))
-                .findFirst()
-                .orElse(null);
+        return storeRepository.findPromotionByProductName(productName);
     }
 
     public void updateProductInventory(List<OrderItem> orderItems) {
-        for (OrderItem item : orderItems) {
-            Product product = products.findProductByName(item.getProductName());
-            product.reduceGeneralQuantity(item.getGeneralQuantity());
-            product.reducePromotionQuantity(item.getPromotionQuantity());
-            products.updateProduct(product);
-        }
+        storeRepository.updateProductInventory(orderItems);
     }
 
 }
