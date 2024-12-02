@@ -4,9 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class Promotions {
-    private final List<Promotion> promotions;
-
+public record Promotions(List<Promotion> promotions) {
     public Promotions(List<Promotion> promotions) {
         this.promotions = new ArrayList<>();
         for (Promotion promotion : promotions) {
@@ -22,5 +20,11 @@ public class Promotions {
 
     public List<Promotion> getPromotions() {
         return Collections.unmodifiableList(promotions);
+    }
+
+    public Promotion findPromotionInfo(String promotionOrderName) {
+        return getPromotions().stream()
+                .filter(promotion -> promotion.getName().equals(promotionOrderName))
+                .findFirst().get();
     }
 }

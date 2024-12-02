@@ -53,12 +53,6 @@ public class Product {
         }
     }
 
-    public void validateQuantity(int requiredQuantity) {
-        if (quantity + promotionQuantity < requiredQuantity) {
-            throw new IllegalStateException(ExceptionMessage.PRPDUCT_NO_QUANTITY.getMessage());
-        }
-    }
-
     public void addQuantity(int quantity, boolean isPromotion) {
         if (isPromotion) {
             this.promotionQuantity += quantity;

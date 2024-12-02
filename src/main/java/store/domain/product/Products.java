@@ -1,15 +1,16 @@
 package store.domain.product;
 
+import store.global.exception.ExceptionMessage;
+
 import java.util.*;
 
-public class Products {
-    private final List<Product> products;
-
+public record Products(List<Product> products) {
     public Products(List<Product> products) {
         this.products = new ArrayList<>(products);
     }
 
-    public List<Product> getProducts() {
+    @Override
+    public List<Product> products() {
         List<Product> clonedProducts = new ArrayList<>();
         for (Product product : products) {
             clonedProducts.add(new Product(
@@ -27,9 +28,8 @@ public class Products {
         return products.stream()
                 .filter(product -> product.getName().equals(name))
                 .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("[ERROR] 존재하지 않는 상품입니다."));
+                .orElseThrow(() -> new IllegalArgumentException(ExceptionMessage.PRODUCT_IS_NO_EXIST.getMessage()));
     }
-
 
     public void updateProduct(Product updatedProduct) {
         for (int i = 0; i < products.size(); i++) {
@@ -37,6 +37,17 @@ public class Products {
                 products.set(i, updatedProduct);
                 break;
             }
+        }
+    }
+
+    public void validateOrderStock(String orderItemName, Integer orderItemQuantity) {
+        Product product = products.stream()
+            .filter(p -> p.getName().equals(orderItemName))
+            .findFirst()
+            .orElseThrow(() -> new IllegalStateException(ExceptionMessage.PRODUCT_IS_NO_EXIST.getMessage()));
+
+        if (product.getQuantity() + product.getPromotionQuantity() < orderItemQuantity) {
+            throw new IllegalStateException(ExceptionMessage.PRPDUCT_NO_QUANTITY.getMessage());
         }
     }
 }
