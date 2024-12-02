@@ -9,8 +9,7 @@ public record Products(List<Product> products) {
         this.products = new ArrayList<>(products);
     }
 
-    @Override
-    public List<Product> products() {
+    public List<Product> getProducts() {
         List<Product> clonedProducts = new ArrayList<>();
         for (Product product : products) {
             clonedProducts.add(new Product(
