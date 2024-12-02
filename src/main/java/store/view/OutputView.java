@@ -63,19 +63,13 @@ public class OutputView {
         printMessage(OutputMessage.RECEIPT_HEADER.getMessage());
 
         for (OrderItem item : items) {
-            System.out.printf(OutputMessage.RECEIPT_ITEM_FORMAT.getMessage(), item.getProductName(), item.getQuantity(), item.getTotalCost());
+            System.out.printf(OutputMessage.RECEIPT_ITEM_FORMAT.getMessage(), item.getOrderItemName(), item.getOrderItemQuantity());
         }
         printMessage(OutputMessage.RECEIPT_FOOTER.getMessage());
         System.out.printf(OutputMessage.TOTAL_COST.getMessage(), totalRegularCost);
         System.out.printf(OutputMessage.PROMOTION_DISCOUNT.getMessage(), promotionDiscount);
         System.out.printf(OutputMessage.MEMBERSHIP_DISCOUNT.getMessage(), memberShipDiscount);
         System.out.printf(OutputMessage.FINAL_AMOUNT.getMessage(), finalCost);
-    }
-
-
-    public void printExceptionMessage() {
-
-        printMessage(ExceptionMessage.FILE_INPUT_ERROR.getMessage());
     }
 
     public void showPromotionNotice(String productName, int freeItems) {
@@ -87,4 +81,7 @@ public class OutputView {
                 productName, quantity, totalItemsWithoutDiscount);
     }
 
+    public void printExceptionMessage(IllegalArgumentException e) {
+        System.out.println(e.getMessage());
+    }
 }
