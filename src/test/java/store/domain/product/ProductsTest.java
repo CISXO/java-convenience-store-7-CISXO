@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -18,7 +19,10 @@ class ProductsTest {
     void setUp() {
         Product cola = new Product("콜라", 1000, 5, 2, "탄산2+1");
         Product chips = new Product("감자칩", 1500, 10, 0, "반짝할인");
-        products = new Products(List.of(cola, chips));
+        List<Product> productsList = new ArrayList<>();
+        productsList.add(cola);
+        productsList.add(chips);
+        products = new Products(productsList);
     }
 
     @Test
