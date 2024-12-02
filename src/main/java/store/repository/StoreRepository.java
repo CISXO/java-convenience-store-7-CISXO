@@ -1,6 +1,7 @@
 package store.repository;
 
 import store.domain.order.OrderItem;
+import store.domain.order.OrderItems;
 import store.domain.product.Product;
 import store.domain.product.Products;
 import store.domain.promotion.Promotion;
@@ -13,6 +14,7 @@ public class StoreRepository {
 
     private Products products;
     private Promotions promotions;
+    private OrderItems orderItems;
 
     public void saveProducts(Products products) {
         this.products = products;
@@ -54,10 +56,22 @@ public class StoreRepository {
 
     public void updateProductInventory(List<OrderItem> orderItems) {
         for (OrderItem item : orderItems) {
-            Product product = products.findProductByName(item.getProductName());
-            product.reduceGeneralQuantity(item.getGeneralQuantity());
-            product.reducePromotionQuantity(item.getPromotionQuantity());
+            Product product = products.findProductByName(item.getOrderItemName());
             products.updateProduct(product);
         }
     }
+
+    public OrderItem createOrderItem(String orderItemName, Integer orderItemQuantity) {
+        products.validateOrderStock(orderItemName, orderItemQuantity);
+
+        return new OrderItem(getProducts(orderItemName), orderItemName, orderItemQuantity);
+    }
+
+    public void createOrders(List<OrderItem> orderItems) {
+        this.orderItems = new OrderItems(orderItems);
+    }
+
+//    public Promotion findPromotionInfo() {
+//        return findPromotionInfo(product.getPromotion());
+//    }
 }
