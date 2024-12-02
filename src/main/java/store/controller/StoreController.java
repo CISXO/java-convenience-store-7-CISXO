@@ -19,7 +19,7 @@ public class StoreController {
     public StoreController() {
         this.outputView = new OutputView();
         this.storeService = new StoreService();
-        this.paymentController = new PaymentController(storeService);
+        this.paymentController = new PaymentController(storeService.getStoreRepository());
     }
 
     public void run() {
@@ -64,7 +64,7 @@ public class StoreController {
         try {
             action.run();
         } catch (IllegalArgumentException e) {
-            outputView.printExceptionMessage();
+            outputView.printExceptionMessage(e);
         }
     }
 
