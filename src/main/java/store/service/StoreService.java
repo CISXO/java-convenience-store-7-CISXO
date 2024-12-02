@@ -28,6 +28,10 @@ public class StoreService {
         return storeRepository.getProducts();
     }
 
+    public StoreRepository getStoreRepository() {
+        return storeRepository;
+    }
+
     public Product getProducts(String productName) {
         return storeRepository.getProducts(productName);
     }
